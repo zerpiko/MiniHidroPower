@@ -12,7 +12,7 @@
     remove(list=ls())
     
     ##setwd("C:/Users/Gerardo Alcal?/Desktop/MiniHidro")
-    setwd(Sys.getenv("PWD"))
+    setwd("/home/zerpiko/git/MiniHidroPower")
 
     library(sp)
     library(raster)
@@ -86,17 +86,21 @@ fNumCruces <- function(NumCoordsRioRadiox,NumCoordsRioRadioy,NumCoordPiletaix,Nu
 
 ##############################################
 ###VII  INICIA CICLO POR EL GRID
-library(doParallel)
+##library(doParallel)
 ##cores=Sys.getenv("SLURM_NTASKS_PER_NODE")
-cores=40
-print(paste0("Running program with : ",cores[1]," cores."))
-print(paste0("Grid size            : ",length(SPPointsGrid)))
-cl <- makeCluster(cores[1],outfile="")
-registerDoParallel(cl)
+##cores=4
+##print(paste0("Running program with : ",cores[1]," cores."))
+##print(paste0("Grid size            : ",length(SPPointsGrid)))
+##cl <- makeCluster(cores[1],outfile="")
+##registerDoParallel(cl)
 
-##    foreach(i=1:600000) %dopar% {
-ptime <- system.time({
-    foreach(i=1:length(SPPointsGrid)) %dopar% {
+##foreach(i=1:length(SPPointsGrid)) %dopar% {
+##    
+##ptime <- system.time({
+library(profvis)
+profvis({
+##  foreach(i=1350000:1351000) %dopar% {
+  for (i in 1350500:1350502) {
         library(sp)
         library(raster)
         sink("log.txt", append=TRUE)
@@ -127,11 +131,25 @@ ptime <- system.time({
             ## Son todos los puntos de la interseccion
             NumCoordsRioRadiox <- SPPointsRioRadio@coords[,1]
             NumCoordsRioRadioy <- SPPointsRioRadio@coords[,2]
+            print(paste0("point",i,"coords",length(NumCoordsRioRadiox)))
             ## Es el punto actual sobre el DEM
             NumCoordPiletaix <- SPPointPiletai@coords[1]
             NumCoordPiletaiy <- SPPointPiletai@coords[2]
             ## b. Se obtienen numero de cruces con el rio
-            SPPointsRioRadio$NumCruces <- mapply(fNumCruces,NumCoordsRioRadiox,NumCoordsRioRadioy,NumCoordPiletaix,NumCoordPiletaiy)
+            ## SPPointsRioRadio$NumCruces <- mapply(fNumCruces,NumCoordsRioRadiox,NumCoordsRioRadioy,NumCoordPiletaix,NumCoordPiletaiy)
+            NumCruces=0
+            for (w in 1:length(NumCoordsRioRadiox))
+            {
+              Numxc <- c(NumCoordsRioRadiox[w], NumCoordPiletaix)
+              Numyc <- c(NumCoordsRioRadioy[w], NumCoordPiletaiy)
+              Matxyc <- cbind(Numxc,Numyc)
+              SLLineaRecta <- spLines(Matxyc,crs=crs(RasMHP))
+              SPolLineaRecta <- buffer(SLLineaRecta, width=res(RasMHP)[1]*0.75)
+              InterCruces <- intersect(SPPointsRioRadio,SPolLineaRecta)
+              NumCruces <- (NumCruces+dim(InterCruces)[1])
+            }
+            SPPointsRioRadio$NumCruces <- NumCruces
+            
             ## c.  Sitios que solamente atraviesan 1 vez el rio
             k <- which(SPPointsRioRadio$NumCruces ==1)
             ## d. Sitios que crucen al rio solamente 1 vez (else NEXT)
@@ -238,9 +256,10 @@ ptime <- system.time({
             }
         }
     }
-})[3]
-stopCluster(cl)
-ptime
+##})[3]
+})
+#stopCluster(cl)
+##ptime
 
 #### Termina Ciclo for del grid
 ##################################
