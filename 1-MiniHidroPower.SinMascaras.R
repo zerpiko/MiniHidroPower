@@ -12,7 +12,7 @@
     remove(list=ls())
     
     ##setwd("C:/Users/Gerardo Alcal?/Desktop/MiniHidro")
-    setwd("/home/zerpiko/git/MiniHidroPower")
+    setwd(Sys.getenv("PWD"))
 
     library(sp)
     library(raster)
@@ -46,9 +46,9 @@
     SPPointsRio <- extract(RasDEM,SPPointsRio,sp=TRUE)
     ## b. Raster MHP (Variables Calculadas)
     RasMHP <- RasDEM
-    RasMHP$PotenciakW  <- NA
-    RasMHP$GastoMax    <- NA
-    RasMHP$HMax        <- NA
+    RasMHP$PotenciakW  <- 0
+    RasMHP$GastoMax    <- 0
+    RasMHP$HMax        <- 0
     RasMHP$xTurbina    <- NA
     RasMHP$yTurbina    <- NA
     RasMHP$zTurbina    <- NA
@@ -64,13 +64,12 @@
         cat("Error, hay celdas del Raster con puro NA's")  
         stop("FIN")
     } else {
-        cat("No hay NA's en el Raster: El programa puede seguir") 
+        cat("No hay NA's en el Raster: El programa puede seguir\n") 
     }
 }
 ###IV. Funcion de NumCruces. Intersecta Linea Recta con Rio (Sitios Radio)
 fNumCruces <- function(NumCoordsRioRadiox,NumCoordsRioRadioy,NumCoordPiletaix,NumCoordPiletaiy)
 {
-    ##Numxc <- c(NumCoordsRioRadiox[10], NumCoordPiletaix); Numyc <- c(NumCoordsRioRadioy[10], NumCoordPiletaiy)
     Numxc <- c(NumCoordsRioRadiox, NumCoordPiletaix)
     Numyc <- c(NumCoordsRioRadioy, NumCoordPiletaiy)
     Matxyc <- cbind(Numxc,Numyc)
@@ -80,28 +79,29 @@ fNumCruces <- function(NumCoordsRioRadiox,NumCoordsRioRadioy,NumCoordPiletaix,Nu
     NumCruces <- dim(InterCruces)[1]
 }
 
-                                        #x11()
-                                        #plot(RasDEM)             
-                                        #plot(SPPointsRio,col='blue',add=TRUE,pch=19,cex=0.1)
+##x11()
+##plot(RasDEM)             
+##plot(SPPointsRio,col='blue',add=TRUE,pch=19,cex=0.1)
+##mult <- 5000
 
-mult <- 5000
 ##############################################
 ###VII  INICIA CICLO POR EL GRID
 library(doParallel)
-cores=detectCores()
-cl <- makeCluster(cores[1])
-registerDoParallel(cl)
+##cores=Sys.getenv("SLURM_NTASKS_PER_NODE")
+cores=40
 print(paste0("Running program with : ",cores[1]," cores."))
 print(paste0("Grid size            : ",length(SPPointsGrid)))
+cl <- makeCluster(cores[1],outfile="")
+registerDoParallel(cl)
 
-                                        #for(i in 1:length(SPPointsGrid)){
-                                        #for(i in seq(1+150,length(SPPointsGrid),1000)){
-                                        #for(i in c(1,50000,100000,250000,350000,450000,550000,600000,700000,850000,900000,1050000,1100000,1250000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000)){
+##    foreach(i=1:600000) %dopar% {
 ptime <- system.time({
-    ##foreach(i=1:length(SPPointsGrid)) %dopar% {
-    foreach(i=1:230000) %dopar% {
+    foreach(i=1:length(SPPointsGrid)) %dopar% {
         library(sp)
         library(raster)
+        sink("log.txt", append=TRUE)
+        cat(paste("Starting iteration",i,"\n"))
+        sink()
 ### PILETA ###
 ###1. Inicio: Ubicar la pileta
         ##if((i/mult)%%1==0){cat("\n Punto", i ,"de",length(SPPointsGrid),"\n")}
@@ -121,7 +121,7 @@ ptime <- system.time({
             ##plot(SPPointPiletai,pch=4,col='black',add=TRUE,cex=0.6)
             ##cat("\n Paso2. Rio fuera del alcance: Potencia, Gasto Hmax son cero",i)
             ##next
-        } else {
+        }  else {
 ###3. Trayectorias Rectas (Pileta-Rio) que solamente toquen al rio 1 vez (NEXT)
             ## a. Puntos de la interseccion (Para aplicar NumCruces con el rio)
             ## Son todos los puntos de la interseccion
@@ -177,13 +177,13 @@ ptime <- system.time({
                     SPPointsGrid$zTurbina[i] <- HTurb
                     SPPointsGrid$BaseTurbina[i] <- SPPointTurb$Base
 ###6. Ruta Recta de la Turbina
-                    if((i/(10*mult))%%1==0) {
-                        Numxc <- c(SPPointTurb@coords[1], SPPointPiletai@coords[1])
-                        Numyc <- c(SPPointTurb@coords[2], SPPointPiletai@coords[2])
-                        Matxyc <- cbind(Numxc,Numyc)
+                    ## if((i/(10*mult))%%1==0) {
+                    ##     Numxc <- c(SPPointTurb@coords[1], SPPointPiletai@coords[1])
+                    ##     Numyc <- c(SPPointTurb@coords[2], SPPointPiletai@coords[2])
+                    ##     Matxyc <- cbind(Numxc,Numyc)
                         
-                        SLTurbinai <- spLines(Matxyc,crs=crs(RasDEM)) # SpatialLinea
-                    }
+                    ##     SLTurbinai <- spLines(Matxyc,crs=crs(RasDEM)) # SpatialLinea
+                    ## }
 ###7. Graficas Turbina
                     ##plot(SPolRadioTurb,border='orange',pch=19,add=TRUE)
                     ##plot(SPPointTurb,col='purple',pch=19,add=TRUE)
@@ -219,13 +219,13 @@ ptime <- system.time({
                         SPPointsGrid$zIntake[i] <- SPPointIntakei$Altura
                         SPPointsGrid$BaseIntake[i] <- SPPointIntakei$Base
 ###11. Linea Intake Pilet
-                        if((i/(10*mult))%%1==0) {
-                            Numxc <- c(SPPointIntakei@coords[1], SPPointPiletai@coords[1])
-                            Numyc <- c(SPPointIntakei@coords[2], SPPointPiletai@coords[2])
-                            Matxyc <- cbind(Numxc,Numyc)
+                        ## if((i/(10*mult))%%1==0) {
+                        ##     Numxc <- c(SPPointIntakei@coords[1], SPPointPiletai@coords[1])
+                        ##     Numyc <- c(SPPointIntakei@coords[2], SPPointPiletai@coords[2])
+                        ##     Matxyc <- cbind(Numxc,Numyc)
                             
-                            SLIntakei <- spLines(Matxyc,crs=crs(RasDEM)) # SpatialLinea
-                        }
+                        ##     SLIntakei <- spLines(Matxyc,crs=crs(RasDEM)) # SpatialLinea
+                        ## }
 ###12. Graficas
                         ##plot(SPolRadioIntake,add=TRUE,border='black')
                         ##plot(SPPointIntakei,add=TRUE,pch=19,col='yellow')
@@ -245,8 +245,7 @@ ptime
 #### Termina Ciclo for del grid
 ##################################
 ### FIN CICLO POR TODO EL GRID ###
-
-                                        #16. Guardar Raster
+##16. Guardar Raster
 {
     RasFinal <- raster(SPPointsGrid,ncol=ncol(RasMHP),nrow=nrow(RasMHP),ext=extent(RasMHP),res=res(RasMHP),crs=crs(RasMHP))
     
