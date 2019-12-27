@@ -101,10 +101,19 @@ registerDoParallel(cl)
 ptime <- system.time({
 
     ##foreach(i=1:length(SPPointsGrid)) %dopar% {
-    foreach(i=c(1,50000,100000,250000,350000,450000,550000,600000,700000,850000,900000,1050000,1100000,1250000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000)) %dopar% {
-
-
-
+    test <- foreach(i=c(1,50000,100000,250000,350000,450000,550000,600000,700000,850000,900000,1050000,1100000,1250000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000),.combine=rbind) %dopar% {
+        PotenciakW <-0
+        HMax <- 0
+        GastoMax <- 0
+        NumCruces <- 0
+        xTurbina <- 0
+        yTurbina <- 0
+        zTurbina <- 0
+        BaseTurbina <- 0
+        xIntake <- 0
+        yIntake <- 0
+        zIntake <- 0
+        BaseIntake <- 0
 
         library(sp)
         library(raster)
@@ -131,14 +140,16 @@ ptime <- system.time({
 
         ## b. Verificar si se intersecta el rio, sino terminar Iteracion
         if(length(SPPointsRioRadio)==0 | length(SPPointsRioRadio2)==0) {
-            SPPointsGrid$PotenciakW[i] <- 0
-            
+            ##SPPointsGrid$PotenciakW[i] <- 0
+            PotenciakW <- 0
             if(length(SPPointsRioRadio)==0){
-                SPPointsGrid$HMax[i] <- 0
+                ##SPPointsGrid$HMax[i] <- 0
+                HMax <- 0
                 ##cat("\n Paso2. Turbina Fuera del Alcance: Hmax =0 ",i)
             }
             if(length(SPPointsRioRadio2)==0){
-                SPPointsGrid$GastoMax[i] <- 0
+                ##SPPointsGrid$GastoMax[i] <- 0
+                GastoMax <- 0
                 ##cat("\n Paso2. Intake Fuera del Alcance: Qmax =0",i)
             }
             ##plot(SPPointPiletai,pch=4,col='black',add=TRUE,cex=0.6)
@@ -151,14 +162,16 @@ ptime <- system.time({
             
             ## b. En caso que no haya sitios mas bajos o altos que la pileta
             if(length(k1)==0 | length(j1)==0) {
-                SPPointsGrid$PotenciakW[i] <- 0
-                
+                ##SPPointsGrid$PotenciakW[i] <- 0
+                PotenciakW <- 0
                 if(length(k1) ==0){
-                    SPPointsGrid$HMax[i] <- 0
+                    ##SPPointsGrid$HMax[i] <- 0
+                    HMax <- 0
                     ##cat("\n Paso3. No hay sitios mas bajos que la pileta:  Hmax=0",i)
                 }
                 if(length(j1) ==0){
-                    SPPointsGrid$GastoMax[i] <- 0
+                    ##SPPointsGrid$GastoMax[i] <- 0
+                    GastoMax <- 0
                     ##cat("\n Paso3. No hay sitios mas altos que la pileta:  Qmax=0",i)
                 }
                 ##plot(SPPointPiletai,pch=4,col='black',add=TRUE,cex=0.6)
@@ -170,13 +183,17 @@ ptime <- system.time({
                 
                 NumCoordsTurbinax <- SPPointsTurbina@coords[,1]
                 NumCoordsTurbinay <- SPPointsTurbina@coords[,2]
-                                        #print(paste0("point",i,"coords",length(NumCoordsTurbinax)))
-                SPPointsTurbina$NumCruces <- mapply(fNumCruces,NumCoordsTurbinax,NumCoordsTurbinay,NumCoordPiletaix,NumCoordPiletaiy)
-                k2 <- which(SPPointsTurbina$NumCruces ==1)
+                ##print(paste0("point",i,"coords",length(NumCoordsTurbinax)))
+                ##SPPointsTurbina$NumCruces <- mapply(fNumCruces,NumCoordsTurbinax,NumCoordsTurbinay,NumCoordPiletaix,NumCoordPiletaiy)
+                ##k2 <- which(SPPointsTurbina$NumCruces ==1)
+                NumCruces <- mapply(fNumCruces,NumCoordsTurbinax,NumCoordsTurbinay,NumCoordPiletaix,NumCoordPiletaiy)
+                k2 <- which(NumCruces ==1)
 
                 if(length(k2) == 0) {
-                    SPPointsGrid$PotenciakW[i] <- 0;
-                    SPPointsGrid$HMax[i] <- 0;
+                    ##SPPointsGrid$PotenciakW[i] <- 0;
+                    PotenciakW <- 0
+                    ##SPPointsGrid$HMax[i] <- 0;
+                    HMax <- 0
                     ##plot(SPPointPiletai,pch=4,col='black',add=TRUE,cex=0.6)
                     ##cat("\n Paso3. No hay ruta Turbina  que toque 1 sola vez al rio: Hmax=0",i)
                     ##next
@@ -188,14 +205,19 @@ ptime <- system.time({
                     SPPointTurb <- SPPointsTurbinaUnCruce[k3[1],] 
                     ## c. Gradiente de altura maximo
                     HTurb <- SPPointTurb$Altura
-                    HMax <- hi-HTurb 
+                    ##HMax <- hi-HTurb 
                     ## d. Guardamos Gradiente Altura maxima
-                    SPPointsGrid$HMax[i] <- HMax
+                    ##SPPointsGrid$HMax[i] <- HMax
+                    HMax <- hi-HTurb 
                     ## e. Guardamos la coordenada de la turbina
-                    SPPointsGrid$xTurbina[i] <- SPPointTurb@coords[1]
-                    SPPointsGrid$yTurbina[i] <- SPPointTurb@coords[2]
-                    SPPointsGrid$zTurbina[i] <- HTurb
-                    SPPointsGrid$BaseTurbina[i] <- SPPointTurb$Base
+                    ## SPPointsGrid$xTurbina[i] <- SPPointTurb@coords[1]
+                    ## SPPointsGrid$yTurbina[i] <- SPPointTurb@coords[2]
+                    ## SPPointsGrid$zTurbina[i] <- HTurb
+                    ## SPPointsGrid$BaseTurbina[i] <- SPPointTurb$Base
+                    xTurbina <- SPPointTurb@coords[1]
+                    yTurbina <- SPPointTurb@coords[2]
+                    zTurbina <- HTurb
+                    BaseTurbina <- SPPointTurb$Base
 ###5. Ruta Recta de la Turbina
                     ## if((i/(10*mult))%%1==0) {
                     Numxc <- c(SPPointTurb@coords[1], SPPointPiletai@coords[1])
@@ -219,7 +241,10 @@ ptime <- system.time({
                     if(length(j3)==0) {
                         ## Guardamos Gasto Maximo
                         QMax <- 0
-                        SPPointsGrid$GastoMax[i] <- QMax; SPPointsGrid$PotenciakW[i] <- 0
+                        ##SPPointsGrid$GastoMax[i] <- QMax;
+                        GastoMax <- QMax
+                        ##SPPointsGrid$PotenciakW[i] <- 0
+                        PotenciakW <- 0
                         ##plot(SPPointPiletai,pch=4,col='black',add=TRUE,cex=0.6)
                         ##cat("\n Paso9. El intake no tiene altura suficiente: Gasto=0",i)
                         ##next 
@@ -232,13 +257,16 @@ ptime <- system.time({
                         NumCoordsIntakex <- SPPointsIntake@coords[,1]
                         NumCoordsIntakey <- SPPointsIntake@coords[,2]
                         
-                        SPPointsIntake$NumCruces <- mapply(fNumCruces,NumCoordsIntakex,NumCoordsIntakey,NumCoordPiletaix,NumCoordPiletaiy)
-                        
-                        j4 <- which(SPPointsIntake$NumCruces ==1)
+                        ##SPPointsIntake$NumCruces <- mapply(fNumCruces,NumCoordsIntakex,NumCoordsIntakey,NumCoordPiletaix,NumCoordPiletaiy)
+                        ##j4 <- which(SPPointsIntake$NumCruces ==1)
+                        NumCruces <- mapply(fNumCruces,NumCoordsIntakex,NumCoordsIntakey,NumCoordPiletaix,NumCoordPiletaiy)
+                        j4 <- which(NumCruces ==1)
 
                         if(length(j4) ==0) {
-                            SPPointsGrid$PotenciakW[i] <- 0;
-                            SPPointsGrid$GastoMax[i] <- 0;
+                            ##SPPointsGrid$PotenciakW[i] <- 0;
+                            PotenciakW <- 0
+                            ##SPPointsGrid$GastoMax[i] <- 0;
+                            GastoMax <- 0
                             ##plot(SPPointPiletai,pch=4,col='black',add=TRUE,cex=0.6)
                             ##cat("\n Paso3. No hay ruta Intake  que toque 1 sola vez al rio: Hmax=0",i)
                             ##next
@@ -249,19 +277,24 @@ ptime <- system.time({
                             SPPointIntakei <- SPPointsIntakeUnCruce[j4[1],] # Posicion con mayor gasto sin obstaculos
                             ## c. Guardamos Gasto Maximo
                             QMax <- SPPointIntakei$Gasto
-                            SPPointsGrid$GastoMax[i] <- QMax    
+                            ##SPPointsGrid$GastoMax[i] <- QMax
+                            GastoMax <- QMax
                             ## d. Guardamos puntos el Intake
-                            SPPointsGrid$xIntake[i] <- SPPointIntakei@coords[1]
-                            SPPointsGrid$yIntake[i] <- SPPointIntakei@coords[2]
-                            SPPointsGrid$zIntake[i] <- SPPointIntakei$Altura
-                            SPPointsGrid$BaseIntake[i] <- SPPointIntakei$Base
+                            ## SPPointsGrid$xIntake[i] <- SPPointIntakei@coords[1]
+                            ## SPPointsGrid$yIntake[i] <- SPPointIntakei@coords[2]
+                            ## SPPointsGrid$zIntake[i] <- SPPointIntakei$Altura
+                            ## SPPointsGrid$BaseIntake[i] <- SPPointIntakei$Base
+                            xIntake <- SPPointIntakei@coords[1]
+                            yIntake <- SPPointIntakei@coords[2]
+                            zIntake <- SPPointIntakei$Altura
+                            BaseIntake <- SPPointIntakei$Base
 ###10. Linea Intake Pilet
                             ## if((i/(10*mult))%%1==0) {
-                            Numxc <- c(SPPointIntakei@coords[1], SPPointPiletai@coords[1])
-                            Numyc <- c(SPPointIntakei@coords[2], SPPointPiletai@coords[2])
-                            Matxyc <- cbind(Numxc,Numyc)
+                            ## Numxc <- c(SPPointIntakei@coords[1], SPPointPiletai@coords[1])
+                            ## Numyc <- c(SPPointIntakei@coords[2], SPPointPiletai@coords[2])
+                            ## Matxyc <- cbind(Numxc,Numyc)
                             
-                            SLIntakei <- spLines(Matxyc,crs=crs(RasDEM)) # SpatialLinea
+                            ## SLIntakei <- spLines(Matxyc,crs=crs(RasDEM)) # SpatialLinea
                             ## }
 ###11. Graficas
                             ##plot(SPolRadio2,add=TRUE,border='black')
@@ -269,16 +302,20 @@ ptime <- system.time({
                             ##lines(SLIntakei,col='yellow',lwd=2)
 ### POTENCIA ###
 ###12. Asignacion PotenciakW
-                            SPPointsGrid$PotenciakW[i] <- 1000*9.81*QMax*HMax/1000
+                            ##SPPointsGrid$PotenciakW[i] <- 1000*9.81*QMax*HMax/1000
+                            PotenciakW <- 1000*9.81*QMax*HMax/1000
                         }
                     }
                 }
             }
         }
+        return(data.frame("index"=i,"PotenciakW"=PotenciakW,"HMax"=HMax,"GastoMax"=GastoMax,"xTurbina"=xTurbina,"yTurbina"=yTurbina,"zTurbina"=zTurbina,"BaseTurbina"=BaseTurbina,"xIntake"=xIntake,"yIntake"=yIntake,"zIntake"=zIntake,"BaseIntake"=BaseIntake))        
     }
 })[3]
 stopCluster(cl)
 ptime
+
+print(test)
 
 
 #### Termina Ciclo for del grid
