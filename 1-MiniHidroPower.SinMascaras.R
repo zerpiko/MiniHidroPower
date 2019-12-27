@@ -20,9 +20,10 @@
     library(rgdal)
     library(tools)
     library(gdistance)
-
+    
     radIntake <- 2200
     radTurbina <- 2000
+    print(paste0("radIntake: ",radIntake," radTurbina: ",radTurbina))
 }
 ###II. Raster y Vectoriales
 {
@@ -94,12 +95,13 @@ print(paste0("Grid size            : ",length(SPPointsGrid)))
 cl <- makeCluster(cores[1],outfile="")
 registerDoParallel(cl)
 
+##    for (i in c(1,50000,100000,250000,350000,450000,550000,600000,700000,850000,900000,1050000,1100000,1250000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000)) {
 ##    foreach(i=1:600000) %dopar% {
-
+##    foreach(i=c(1,50000,100000,250000,350000,450000,550000,600000,700000,850000,900000,1050000,1100000,1250000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000)) %do% {
 ptime <- system.time({
-    
-    foreach(i=1:length(SPPointsGrid)) %dopar% {
 
+    ##foreach(i=1:length(SPPointsGrid)) %dopar% {
+    foreach(i=c(1,50000,100000,250000,350000,450000,550000,600000,700000,850000,900000,1050000,1100000,1250000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000)) %dopar% {
 
 
 
@@ -177,7 +179,7 @@ ptime <- system.time({
                     SPPointsGrid$HMax[i] <- 0;
                     ##plot(SPPointPiletai,pch=4,col='black',add=TRUE,cex=0.6)
                     ##cat("\n Paso3. No hay ruta Turbina  que toque 1 sola vez al rio: Hmax=0",i)
-                    next
+                    ##next
                 } else {
                     ## b.
                     SPPointsTurbinaUnCruce <- SPPointsTurbina[k2,]
@@ -205,7 +207,7 @@ ptime <- system.time({
 ###6. Graficas Turbina
                     ##plot(SPolRadio,border='orange',pch=19,add=TRUE)
                     ##plot(SPPointTurb,col='red',pch=19,add=TRUE)
-                    lines(SLTurbinai,col='orange',lwd=2)
+                    ##lines(SLTurbinai,col='orange',lwd=2)
 ### DESVIACION ###
 ###7. El Intake pertenece a la misma rama del rio (else NEXT)
 
@@ -264,7 +266,7 @@ ptime <- system.time({
 ###11. Graficas
                             ##plot(SPolRadio2,add=TRUE,border='black')
                             ##plot(SPPointIntakei,add=TRUE,pch=19,col='yellow')
-                            lines(SLIntakei,col='yellow',lwd=2)
+                            ##lines(SLIntakei,col='yellow',lwd=2)
 ### POTENCIA ###
 ###12. Asignacion PotenciakW
                             SPPointsGrid$PotenciakW[i] <- 1000*9.81*QMax*HMax/1000
@@ -311,7 +313,7 @@ ptime
     archivof1 <- paste("DatosMHP.csv",sep="")
     write.csv(dffinal, file = archivof1,row.names=FALSE)
     
-    View(dffinal)
+    ##View(dffinal)
     ##x11()
     ##plot(RasFinal$PotenciakW)
     ##plot(SPPointsRio, col='blue', add=TRUE)  
