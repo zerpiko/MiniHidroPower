@@ -21,8 +21,8 @@
     library(tools)
     library(gdistance)
     
-    radIntake <- 2200
-    radTurbina <- 2000
+    radIntake <- 2000
+    radTurbina <- 2500
     print(paste0("radIntake: ",radIntake," radTurbina: ",radTurbina))
 }
 ###II. Raster y Vectoriales
@@ -35,8 +35,6 @@
     ## Homologar Extension
     RasRio  <- crop(RasRio,RasDEM)
     ## Nombres Atributo
-    nlayers(RasRio)
-    nlayers(RasDEM)
     names(RasRio) <- c("ID","Gasto","Base","Entrada","Salida")
     names(RasDEM) <- "Altura"
 }
@@ -59,7 +57,7 @@
     RasMHP$zIntake     <- NA
     RasMHP$BaseIntake  <- NA
     ## c. Raster MHP a Malla de Puntos (OJO! Celdas con puro NA's no generan punto)
-    SPPointsGrid <- as(RasMHP,"SpatialPointsDataFrame")
+    SPPointsGrid <- as(RasDEM,"SpatialPointsDataFrame")
     
     if(length(SPPointsGrid)!=ncell(RasMHP)) {
         cat("Error, hay celdas del Raster con puro NA's")  
@@ -100,8 +98,8 @@ registerDoParallel(cl)
 ##    foreach(i=c(1,50000,100000,250000,350000,450000,550000,600000,700000,850000,900000,1050000,1100000,1250000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000)) %do% {
 ptime <- system.time({
 
-    ##foreach(i=1:length(SPPointsGrid)) %dopar% {
-    test <- foreach(i=c(1,50000,100000,250000,350000,450000,550000,600000,700000,850000,900000,1050000,1100000,1250000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000),.combine=rbind) %dopar% {
+    test <- foreach(i=1:length(SPPointsGrid),.combine=rbind) %dopar% {
+    ##test <- foreach(i=c(1,50000,100000,250000,350000,450000,550000,600000,700000,850000,900000,1050000,1100000,1250000,1300000,1400000,1500000,1600000,1700000,1800000,1900000,2000000,2100000,2200000,2300000),.combine=rbind) %dopar% {
         PotenciakW <-0
         HMax <- 0
         GastoMax <- 0
@@ -220,11 +218,11 @@ ptime <- system.time({
                     BaseTurbina <- SPPointTurb$Base
 ###5. Ruta Recta de la Turbina
                     ## if((i/(10*mult))%%1==0) {
-                    Numxc <- c(SPPointTurb@coords[1], SPPointPiletai@coords[1])
-                    Numyc <- c(SPPointTurb@coords[2], SPPointPiletai@coords[2])
-                    Matxyc <- cbind(Numxc,Numyc)
+                    ##Numxc <- c(SPPointTurb@coords[1], SPPointPiletai@coords[1])
+                    ##Numyc <- c(SPPointTurb@coords[2], SPPointPiletai@coords[2])
+                    ##Matxyc <- cbind(Numxc,Numyc)
                     
-                    SLTurbinai <- spLines(Matxyc,crs=crs(RasDEM)) # SpatialLinea
+                    ##SLTurbinai <- spLines(Matxyc,crs=crs(RasDEM)) # SpatialLinea
                     ## }
 ###6. Graficas Turbina
                     ##plot(SPolRadio,border='orange',pch=19,add=TRUE)
@@ -315,14 +313,20 @@ ptime <- system.time({
 stopCluster(cl)
 ptime
 
-print(test)
-
-
+##print(test)
 #### Termina Ciclo for del grid
 ##################################
 ### FIN CICLO POR TODO EL GRID ###
 ##16. Guardar Raster
 {
+    ## print("writing table:")
+    ## write.table(test,"1-RasterMHP.txt")
+    print("merging dataframes:")
+    SPPointsGrid$index <- 1:length(SPPointsGrid)
+    SPPointsGrid <- merge(SPPointsGrid,test)
+    print("writing raster:")
+    ##View(SPPointsGrid@data)
+
     RasFinal <- raster(SPPointsGrid,ncol=ncol(RasMHP),nrow=nrow(RasMHP),ext=extent(RasMHP),res=res(RasMHP),crs=crs(RasMHP))
     
     RasFinal$PotenciakW <-  SPPointsGrid$PotenciakW                       # 1
